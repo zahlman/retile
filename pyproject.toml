@@ -1,0 +1,14 @@
+[project]
+name = "retile"
+version = "0.1.0"
+description = ""
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3"
+]
+dependencies = [ ]
+
+[[project.authors]]
+name = "Karl Knechtel"
+email = "zahlman@proton.me"
