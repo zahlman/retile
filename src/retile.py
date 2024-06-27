@@ -2,7 +2,8 @@ import sys
 from tomllib import load as load_toml
 from types import SimpleNamespace as Namespace
 
-import imageio as iio
+# Ensure forwards compatibility as much as possible
+from imageio.v3 import imread as read_image, imwrite as write_image
 import numpy as np
 
 
@@ -86,10 +87,25 @@ def arrange_tiles(tiles, tile_config):
     return np.pad(result, ((y, eh), (x, ew)), constant_values=bg)
 
 
-def raw_to_png(image_filename, config_filename):
+def load(image_filename, config):
+    if config.format.force_raw:
+        return load_raw(image_filename, config.format), True
+    try:
+        return read_image(image_filename), False
+    except FileNotFoundError:
+        raise # this is a OSError subtype so handle it separately
+    except OSError:
+        return load_raw(image_filename, config.format), True
+
+
+def convert(image_filename, config_filename):
     config = _get_config(config_filename)
-    raw = load_raw(image_filename, config.format)
-    result = _default_palette(config.format.input_bpp)[raw]
-    result = arrange_tiles(get_tiles(result, config.tiles), config.tiles)
+    try:
+        image, is_raw = load(image_filename, config)
+    except FileNotFoundError as e:
+        raise e from None
+    if is_raw:
+        image = _default_palette(config.format.input_bpp)[image]
+    image = arrange_tiles(get_tiles(image, config.tiles), config.tiles)
     base, _, _ = image_filename.rpartition('.')
-    iio.imwrite(f'{base}.{config.format.output_extension}', result)
+    write_image(f'{base}.{config.format.output_extension}', image)
