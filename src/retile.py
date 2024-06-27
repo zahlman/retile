@@ -38,19 +38,11 @@ def _get_config(config_file):
 
 
 def load_raw(filename, fmt):
-    r, c, th, tw = fmt.rows, fmt.columns, fmt.tile_height, fmt.tile_width
-    bpp = fmt.bpp
     data = np.fromfile(filename, dtype=np.uint8)
     # compute all the shifted, masked and scaled results for each byte
-    # along a second dimension, then ravel it back into 1d data.
-    shift, mask = _unpack_shift(bpp), _unpack_mask(bpp)
-    # 1bpp -> 255, 2bpp -> 85, 4bpp -> 17, 8bpp -> 1
-    data = ((data[..., None] >> shift) & mask).reshape(-1)
-    # Reinterpret as a grid of tiles which are each grids of pixels.
-    unpacked = data.reshape(r, c, th, tw)
-    # group vertical and horizontal dimensions, then flatten
-    # adapted from https://stackoverflow.com/questions/9071446
-    return unpacked.transpose((0, 2, 1, 3)).reshape((r*th, c*tw))
+    # along a second dimension, then reshape to the appropriate width.
+    shift, mask = _unpack_shift(fmt.bpp), _unpack_mask(fmt.bpp)
+    return ((data[..., None] >> shift) & mask).reshape(-1, fmt.width)
 
 
 def raw_to_png(image_filename, config_filename):
