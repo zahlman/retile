@@ -19,8 +19,8 @@ def _unpack_mask(bpp):
     return (1 << abs(bpp)) - 1
 
 
-def _default_palette(config):
-    return _byte_values[::255//_unpack_mask(config.input_format.bpp)]
+def _default_palette(bpp):
+    return _byte_values[::255//_unpack_mask(bpp)]
 
 
 def _make_namespace(obj):
@@ -37,17 +37,18 @@ def _get_config(config_file):
         return _make_namespace(load_toml(f))
 
 
-def load_raw(filename, fmt):
+def load_raw(filename, width, bpp):
     data = np.fromfile(filename, dtype=np.uint8)
     # compute all the shifted, masked and scaled results for each byte
     # along a second dimension, then reshape to the appropriate width.
-    shift, mask = _unpack_shift(fmt.bpp), _unpack_mask(fmt.bpp)
-    return ((data[..., None] >> shift) & mask).reshape(-1, fmt.width)
+    shift, mask = _unpack_shift(bpp), _unpack_mask(bpp)
+    return ((data[..., None] >> shift) & mask).reshape(-1, width)
 
 
 def raw_to_png(image_filename, config_filename):
     config = _get_config(config_filename)
-    raw = load_raw(image_filename, config.input_format)
-    result = _default_palette(config)[raw]
-    out = image_filename.removesuffix('.bin') + '.png'
-    iio.imwrite(out, result)
+    cf = config.format
+    raw = load_raw(image_filename, cf.input_width, cf.input_bpp)
+    result = _default_palette(cf.input_bpp)[raw]
+    base, _, _ = image_filename.rpartition('.')
+    iio.imwrite(f'{base}.{cf.output_extension}', result)
