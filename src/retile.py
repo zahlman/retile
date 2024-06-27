@@ -37,7 +37,8 @@ def _get_config(config_file):
         return _make_namespace(load_toml(f))
 
 
-def load_raw(filename, width, bpp):
+def load_raw(filename, raw_format):
+    width, bpp = raw_format.input_width, raw_format.input_bpp
     data = np.fromfile(filename, dtype=np.uint8)
     # compute all the shifted, masked and scaled results for each byte
     # along a second dimension, then reshape to the appropriate width.
@@ -47,8 +48,7 @@ def load_raw(filename, width, bpp):
 
 def raw_to_png(image_filename, config_filename):
     config = _get_config(config_filename)
-    cf = config.format
-    raw = load_raw(image_filename, cf.input_width, cf.input_bpp)
-    result = _default_palette(cf.input_bpp)[raw]
+    raw = load_raw(image_filename, config.format)
+    result = _default_palette(config.format.input_bpp)[raw]
     base, _, _ = image_filename.rpartition('.')
-    iio.imwrite(f'{base}.{cf.output_extension}', result)
+    iio.imwrite(f'{base}.{config.format.output_extension}', result)
