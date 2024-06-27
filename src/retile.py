@@ -48,8 +48,8 @@ def load_raw(filename, raw_format):
 
 def _ensure(data, min_height, min_width):
     height, width = data.shape
-    height_padding = min(0, min_height - height)
-    width_padding = min(0, min_width - width)
+    height_padding = max(0, min_height - height)
+    width_padding = max(0, min_width - width)
     return np.pad(data, ((0, height_padding), (0, width_padding)))
 
 
