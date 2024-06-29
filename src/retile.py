@@ -21,7 +21,9 @@ def _unpack_mask(bpp):
 
 
 def _default_palette(bpp):
-    return _byte_values[::255//_unpack_mask(bpp)]
+    # Slice greyscale, add an axis and tile along that axis
+    # so that r/g/b colour channels copy the values.
+    return np.tile(_byte_values[::255//_unpack_mask(bpp), None], (1, 3))
 
 
 def _make_namespace(obj):
@@ -48,10 +50,10 @@ def load_raw(filename, raw_format):
 
 
 def _ensure(data, min_height, min_width):
-    height, width = data.shape
+    height, width, depth = data.shape
     height_padding = max(0, min_height - height)
     width_padding = max(0, min_width - width)
-    return np.pad(data, ((0, height_padding), (0, width_padding)))
+    return np.pad(data, ((0, height_padding), (0, width_padding), (0, 0)))
 
 
 def get_tiles(data, tile_config):
@@ -63,9 +65,10 @@ def get_tiles(data, tile_config):
     # Extract the region where the tiles are.
     data = _ensure(data, y+h, x+w)[y:y+h, x:x+w]
     # Rearrange into tiles (https://stackoverflow.com/questions/9071446)
-    data = data.reshape(r, th+ph, c, tw+pw).transpose((0, 2, 1, 3))
+    depth = data.shape[-1]
+    data = data.reshape(r, th+ph, c, tw+pw, depth).transpose((0, 2, 1, 3, 4))
     # Trim padding and produce a 1d array of tiles
-    return data[:, :, :th, :tw].reshape(-1, th, tw)
+    return data[:, :, :th, :tw, :].reshape(-1, th, tw, depth)
 
 
 def arrange_tiles(tiles, tile_config):
@@ -75,16 +78,17 @@ def arrange_tiles(tiles, tile_config):
     ew, eh = tile_config.result.extra
     bg = tile_config.result.bg
     # add per-tile padding on right and bottom
-    tiles = np.pad(tiles, ((0, 0), (0, ph), (0, pw)), constant_values=bg)
+    tiles = np.pad(tiles, ((0, 0), (0, ph), (0, pw), (0, 0)), constant_values=bg)
     # Rearrange into 16-wide tile grid, then into bitmap
     c = 16
     r, extra = divmod(len(tiles), c)
     assert not extra # tile count not divisible
-    tiles = tiles.reshape(r, c, th+ph, tw+pw).transpose((0, 2, 1, 3))
+    depth = tiles.shape[-1]
+    tiles = tiles.reshape(r, c, th+ph, tw+pw, depth).transpose((0, 2, 1, 3, 4))
     # Flatten to 2d and fix padding
-    result = tiles.reshape(r * (th+ph), c * (tw+pw))
+    result = tiles.reshape(r * (th+ph), c * (tw+pw), depth)
     # FIXME: does this work with negative values?
-    return np.pad(result, ((y, eh), (x, ew)), constant_values=bg)
+    return np.pad(result, ((y, eh), (x, ew), (0, 0)), constant_values=bg)
 
 
 def load(image_filename, config):
@@ -105,6 +109,8 @@ def convert(image_filename, config_filename):
     except FileNotFoundError as e:
         raise e from None
     if is_raw:
+        # N.B. This adds a dimension to the data.
+        # It should be 2d when the palettized info is read.
         image = _default_palette(config.format.input_bpp)[image]
     image = arrange_tiles(get_tiles(image, config.tiles), config.tiles)
     base, _, _ = image_filename.rpartition('.')
