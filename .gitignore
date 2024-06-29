@@ -8,3 +8,7 @@ __pycache__/
 
 # pip
 *.egg-info
+
+# building and distribution (pip wheel)
+build/
+dist/
