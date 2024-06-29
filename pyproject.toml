@@ -2,7 +2,7 @@
 name = "retile"
 version = "0.2.0"
 description = ""
-readme = "README.rst"
+readme = "README.md"
 classifiers = [
     "Development Status :: 1 - Planning",
     "Programming Language :: Python :: 3"
