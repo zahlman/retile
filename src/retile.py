@@ -115,3 +115,8 @@ def convert(image_filename, config_filename):
     image = arrange_tiles(get_tiles(image, config.tiles), config.tiles)
     base, _, _ = image_filename.rpartition('.')
     write_image(f'{base}.{config.format.output_extension}', image)
+
+
+def cli():
+    program_name, image_filename, config_filename = sys.argv
+    sys.exit(convert(image_filename, config_filename))

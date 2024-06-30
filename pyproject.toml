@@ -1,6 +1,6 @@
 [project]
 name = "retile"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 readme = "README.md"
 classifiers = [
@@ -9,6 +9,9 @@ classifiers = [
 ]
 dependencies = [ "imageio" ]
 license = {file = "LICENSE.txt"}
+
+[project.scripts]
+retile = "retile:cli"
 
 [[project.authors]]
 name = "Karl Knechtel"
