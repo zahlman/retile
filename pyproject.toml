@@ -7,7 +7,7 @@ classifiers = [
     "Development Status :: 1 - Planning",
     "Programming Language :: Python :: 3"
 ]
-dependencies = [ ]
+dependencies = [ "imageio" ]
 license = {file = "LICENSE.txt"}
 
 [[project.authors]]
